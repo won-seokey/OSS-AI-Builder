@@ -1,0 +1,183 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+        skipDefaultCheckout(true)
+        buildDiscarder(logRotator(numToKeepStr: '30'))
+        withFolderProperties()
+    }
+
+    parameters {
+        string(name: 'REQUEST_JSON', defaultValue: '', description: 'Repository-relative pending request JSON path')
+        string(name: 'REQUEST_REF', defaultValue: '', description: 'Source commit or GitHub request reference')
+        string(name: 'JIRA_TOKEN_CRED_ID', defaultValue: 'JIRA_OSS_TOKEN', description: 'Jenkins Secret Text credential ID for Jira token')
+        string(name: 'OPENAI_KEY_CRED_ID', defaultValue: 'OPEN_API_KEY', description: 'Jenkins Secret Text credential ID bound to OPENAI_API_KEY')
+        string(name: 'SMTP_CRED_ID', defaultValue: 'SMTP_CREDENTIALS', description: 'Jenkins Username/Password credential ID for notification mail')
+        string(name: 'TEAMFORGE_CRED_ID', defaultValue: 'TEAMFORGE_CRED_ID', description: 'Jenkins Username/Password credential ID for TeamForge checkout')
+        string(name: 'GITHUB_CRED_ID', defaultValue: 'OSS_GITHUB', description: 'Jenkins Secret Text credential ID for private GitHub checkout')
+        string(name: 'BLACKDUCK_CRED_ID', defaultValue: 'BLACKDUCK_TOKEN', description: 'Jenkins Secret Text credential ID for Black Duck API token')
+        string(name: 'OPENAI_MODEL', defaultValue: 'gpt-5.6-luna', description: 'OpenAI-compatible model identifier')
+        string(name: 'OPENAI_BASE_URL', defaultValue: 'https://api.openai.com/v1', description: 'OpenAI-compatible API base URL')
+        choice(name: 'OPENAI_REASONING_EFFORT', choices: ['xhigh', 'high', 'medium', 'low', 'none'], description: 'Reasoning effort for GPT-5.6 Luna')
+        string(name: 'JIRA_EMAIL', defaultValue: 'oss-automation@example.com', description: 'Jira account email for API auth')
+        string(name: 'PYTHON_CMD', defaultValue: 'python', description: 'Python command or absolute path on the Windows agent')
+        string(name: 'OSS_CACHE_ROOT', defaultValue: 'C:\\OSS_CACHE\\WORKSPACES', description: 'Absolute cache directory for OSS checkout workspaces')
+        booleanParam(name: 'RUN_NOTIFY', defaultValue: false, description: 'Send the success notification after Jira finalization')
+        booleanParam(name: 'RUN_NOTIFY_ON_FAILURE', defaultValue: false, description: 'Send the notification from post-failure handling')
+    }
+
+    stages {
+        stage('Clean Workspace and Checkout') {
+            steps {
+                deleteDir()
+                checkout scm
+                script {
+                    def requestRef = params.REQUEST_REF?.trim()
+                    if (requestRef) {
+                        if (!(requestRef ==~ /[0-9a-fA-F]{40}/)) {
+                            error("REQUEST_REF must be a 40-character commit SHA: ${requestRef}")
+                        }
+                        bat "git fetch --no-tags origin ${requestRef}"
+                        bat "git checkout --detach ${requestRef}"
+                    }
+                }
+            }
+        }
+
+        stage('Precheck') {
+            steps {
+                bat '''
+                    if not exist "jenkins_scripts/pipeline_runner.py" exit /b 1
+                    if not exist "jenkins_scripts/manifest_builder_llm.py" exit /b 1
+                    if not exist "jenkins_scripts/prompts/manifest_system_prompt.md" exit /b 1
+                    if not exist "jenkins_scripts/manifest_validator.py" exit /b 1
+                    if not exist "jenkins_scripts/blackduck_catalog.yaml" exit /b 1
+                    if not exist "jenkins_scripts/run-bld.py" exit /b 1
+                '''
+                script {
+                    def requestJson = params.REQUEST_JSON?.trim()
+                    if (!requestJson) {
+                        error('REQUEST_JSON must identify one file under requests/pending')
+                    }
+                    if (!requestJson.startsWith('requests/pending/') || requestJson.contains('..')) {
+                        error("REQUEST_JSON must be a repository-relative requests/pending path: ${requestJson}")
+                    }
+                    if (!fileExists(requestJson)) {
+                        error("REQUEST_JSON file not found after SCM checkout: ${requestJson}")
+                    }
+                    if ((params.RUN_NOTIFY || params.RUN_NOTIFY_ON_FAILURE) && !env.OSS_MAIL_TO?.trim()) {
+                        error('OSS_MAIL_TO must be configured in the test folder Folder Properties when notification is enabled')
+                    }
+                }
+            }
+        }
+
+        stage('Prepare Runtime') {
+            steps {
+                bat '''
+                    if exist "jenkins_runtime" rmdir /s /q "jenkins_runtime"
+                    mkdir "jenkins_runtime/manifests"
+                '''
+            }
+        }
+
+        stage('Collect Input From Jira') {
+            steps {
+                withCredentials([string(credentialsId: params.JIRA_TOKEN_CRED_ID, variable: 'JIRA_OSS_TOKEN')]) {
+                    bat "\"${params.PYTHON_CMD}\" jenkins_scripts\\pipeline_runner.py collect-input --output-dir jenkins_runtime --oss-root jenkins_runtime\\manifests --request-json \"${params.REQUEST_JSON}\" --jira-email \"${params.JIRA_EMAIL}\" --jira-token-env JIRA_OSS_TOKEN"
+                }
+            }
+        }
+
+        stage('Determine Input Mode') {
+            steps {
+                script {
+                    env.NEED_AI = fileExists('jenkins_runtime/jira_request_text.txt') ? 'true' : 'false'
+                    echo "NEED_AI=${env.NEED_AI}"
+                }
+            }
+        }
+
+        stage('Generate Manifest With AI') {
+            when {
+                expression { return env.NEED_AI == 'true' }
+            }
+            steps {
+                withCredentials([string(credentialsId: params.OPENAI_KEY_CRED_ID, variable: 'OPENAI_API_KEY')]) {
+                    script {
+                        def supportedReasoningEfforts = ['none', 'low', 'medium', 'high', 'xhigh']
+                        def reasoningEffort = supportedReasoningEfforts.contains(params.OPENAI_REASONING_EFFORT) ? params.OPENAI_REASONING_EFFORT : 'xhigh'
+                        echo "OPENAI_REASONING_EFFORT=${reasoningEffort}"
+                        bat "\"${params.PYTHON_CMD}\" jenkins_scripts\\pipeline_runner.py generate-manifest --output-dir jenkins_runtime --python-cmd \"${params.PYTHON_CMD}\" --builder-path jenkins_scripts\\manifest_builder_llm.py --validator-path jenkins_scripts\\manifest_validator.py --catalog-path jenkins_scripts\\blackduck_catalog.yaml --system-prompt-path jenkins_scripts\\prompts\\manifest_system_prompt.md --model \"${params.OPENAI_MODEL}\" --base-url \"${params.OPENAI_BASE_URL}\" --reasoning-effort \"${reasoningEffort}\""
+                    }
+                }
+            }
+        }
+
+        stage('Run OSS Build') {
+            steps {
+                withEnv(["OSS_CACHE_ROOT=${params.OSS_CACHE_ROOT}"]) {
+                    withCredentials([
+                        string(credentialsId: params.JIRA_TOKEN_CRED_ID, variable: 'JIRA_OSS_TOKEN'),
+                        usernamePassword(credentialsId: params.TEAMFORGE_CRED_ID, usernameVariable: 'TEAMFORGE_USER', passwordVariable: 'TEAMFORGE_PASSWORD'),
+                        string(credentialsId: params.GITHUB_CRED_ID, variable: 'GITHUB_TOKEN'),
+                        string(credentialsId: params.BLACKDUCK_CRED_ID, variable: 'BLACKDUCK_TOKEN')
+                    ]) {
+                        bat "\"${params.PYTHON_CMD}\" jenkins_scripts\\pipeline_runner.py run-build --output-dir jenkins_runtime --python-cmd \"${params.PYTHON_CMD}\" --runner-path jenkins_scripts\\run-bld.py --jira-email \"${params.JIRA_EMAIL}\" --jira-token-env JIRA_OSS_TOKEN"
+                    }
+                }
+            }
+        }
+
+        stage('Finalize Jira') {
+            steps {
+                withCredentials([string(credentialsId: params.JIRA_TOKEN_CRED_ID, variable: 'JIRA_OSS_TOKEN')]) {
+                    script {
+                        def notifyArgs = params.RUN_NOTIFY ? '--notify --notify-script jenkins_scripts\\step7_mail.ps1' : ''
+                        if (params.RUN_NOTIFY) {
+                            withCredentials([
+                                usernamePassword(credentialsId: params.SMTP_CRED_ID, usernameVariable: 'SMTP_CREDENTIALS_USR', passwordVariable: 'SMTP_CREDENTIALS_PSW'),
+                                string(credentialsId: params.BLACKDUCK_CRED_ID, variable: 'BLACKDUCK_TOKEN')
+                            ]) {
+                                bat "\"${params.PYTHON_CMD}\" jenkins_scripts\\pipeline_runner.py finalize --output-dir jenkins_runtime --jira-email \"${params.JIRA_EMAIL}\" --jira-token-env JIRA_OSS_TOKEN ${notifyArgs}"
+                            }
+                        } else {
+                            bat "\"${params.PYTHON_CMD}\" jenkins_scripts\\pipeline_runner.py finalize --output-dir jenkins_runtime --jira-email \"${params.JIRA_EMAIL}\" --jira-token-env JIRA_OSS_TOKEN"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'jenkins_runtime/*.txt,jenkins_runtime/*.json,jenkins_runtime/*.yaml,jenkins_runtime/*.log', allowEmptyArchive: true
+            script {
+                if (currentBuild.currentResult != 'SUCCESS') {
+                    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                        withCredentials([string(credentialsId: params.JIRA_TOKEN_CRED_ID, variable: 'JIRA_OSS_TOKEN')]) {
+                            bat "\"${params.PYTHON_CMD}\" jenkins_scripts\\pipeline_runner.py finalize --output-dir jenkins_runtime --cleanup-processing --jira-email \"${params.JIRA_EMAIL}\" --jira-token-env JIRA_OSS_TOKEN"
+                        }
+                    }
+                }
+                if (params.RUN_NOTIFY_ON_FAILURE && currentBuild.currentResult != 'SUCCESS') {
+                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                        withEnv(['PIPELINE_STATUS=FAILURE']) {
+                            withCredentials([string(credentialsId: params.JIRA_TOKEN_CRED_ID, variable: 'JIRA_OSS_TOKEN')]) {
+                                withCredentials([
+                                    usernamePassword(credentialsId: params.SMTP_CRED_ID, usernameVariable: 'SMTP_CREDENTIALS_USR', passwordVariable: 'SMTP_CREDENTIALS_PSW'),
+                                    string(credentialsId: params.BLACKDUCK_CRED_ID, variable: 'BLACKDUCK_TOKEN')
+                                ]) {
+                                    bat "\"${params.PYTHON_CMD}\" jenkins_scripts\\pipeline_runner.py finalize --output-dir jenkins_runtime --notify-only --notify --notify-script jenkins_scripts\\step7_mail.ps1 --jira-email \"${params.JIRA_EMAIL}\" --jira-token-env JIRA_OSS_TOKEN"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

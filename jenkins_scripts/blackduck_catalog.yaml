@@ -1,0 +1,30 @@
+projects:
+  - oem: RENAULT
+    project: Renault Gen3
+    aliases:
+      - gen3
+      - renault gen3
+      - renault_gen3
+      - renault wcbs gen3
+      - renault_wcbs_gen3
+    version_by_unit:
+      APPL: SW V6.3.0_APPL
+      FBL: SW V4.0.0_FBL
+
+  - oem: GM
+    project: GM Gen3
+    aliases:
+      - gm gen3
+
+  - oem: MB
+    project: MB
+    aliases:
+      - mb
+      - mb gen3
+      - mb wmi gen3
+      - mb wmi gen3.0
+
+  - oem: SKODA
+    project: SKODA WLC
+    aliases:
+      - skoda wlc

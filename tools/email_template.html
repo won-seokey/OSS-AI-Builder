@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { margin: 0; padding: 24px; background-color: #f4f5f7; font-family: Arial, sans-serif; color: #333333; line-height: 1.5; }
+        a { color: #FF8300; text-decoration: none; }
+        .mail-shell { max-width: 860px; margin: 0 auto; }
+        .header { background-color: #FF8300; color: #ffffff; padding: 24px 28px; text-align: center; border-radius: 10px 10px 0 0; }
+        .header h2 { margin: 0; font-size: 22px; }
+        .content { background-color: #ffffff; padding: 24px 28px; border: 1px solid #e0e0e0; border-top: 0; border-radius: 0 0 10px 10px; }
+        .status-success { color: #28a745; font-weight: bold; }
+        .status-failure { color: #d9534f; font-weight: bold; }
+        .section { margin: 0 0 24px; }
+        .section:last-child { margin-bottom: 0; }
+        .section-title { font-weight: bold; font-size: 15px; color: #FF8300; border-bottom: 2px solid #FF8300; padding-bottom: 8px; margin-bottom: 12px; }
+        .info-table { width: 100%; border-collapse: collapse; margin: 12px 0 0; table-layout: fixed; }
+        .info-table td { padding: 10px 12px; border: 1px solid #e0e0e0; vertical-align: top; word-break: break-word; }
+        .info-table td:first-child { font-weight: bold; width: 28%; background-color: #f1f1f1; color: #333333; }
+        .output-box { background-color: #101411; color: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e0e0e0; font-family: 'Courier New', monospace; font-size: 13px; white-space: pre-wrap; word-wrap: break-word; overflow-x: auto; max-height: 400px; overflow-y: auto; }
+        .error-box { background-color: #fff5eb; color: #d9534f; padding: 16px; border-radius: 8px; border-left: 4px solid #f0ad4e; border: 1px solid #e0e0e0; }
+        .footer { background-color: #f8f9fa; text-align: center; font-size: 12px; color: #878787; margin-top: 16px; padding: 16px; border: 1px solid #e0e0e0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="mail-shell">
+        <div class="header">
+            <h2>{{MAIL_TITLE}}</h2>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <div class="section-title">작업 상태</div>
+                <table class="info-table">
+                    <tr>
+                        <td>상태</td>
+                        <td class="{{STATUS_CLASS}}">{{STATUS_TEXT}}</td>
+                    </tr>
+                    <tr>
+                        <td>Job 이름</td>
+                        <td>{{JOB_NAME}}</td>
+                    </tr>
+                    <tr>
+                        <td>Build 번호</td>
+                        <td>#{{BUILD_NUMBER}}</td>
+                    </tr>
+                    <tr>
+                        <td>실행 시간</td>
+                        <td>{{BUILD_TIME}}</td>
+                    </tr>
+                    <tr>
+                        <td>Jenkins URL</td>
+                        <td><a href="{{BUILD_URL}}">{{BUILD_URL}}</a></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="section">
+                <div class="section-title">실행 결과</div>
+                <div class="output-box">{{SCRIPT_OUTPUT}}</div>
+            </div>
+
+            {{CUSTOM_SECTION}}
+
+            {{ERROR_SECTION}}
+        </div>
+
+        <div class="footer">
+            <p>이 이메일은 Jenkins에서 자동 생성된 메시지입니다.</p>
+            <p>문제가 발생한 경우 <a href="{{BUILD_CONSOLE_URL}}">Build Console</a>을 확인하세요.</p>
+        </div>
+    </div>
+</body>
+</html>

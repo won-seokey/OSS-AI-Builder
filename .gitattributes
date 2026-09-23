@@ -1,0 +1,43 @@
+# [Windows Script]
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.psm1 text eol=crlf
+*.psd1 text eol=crlf
+
+# [Linux/Unix Script]
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+*.ksh text eol=lf
+*.csh text eol=lf
+*.tcsh text eol=lf
+*.run text eol=lf
+
+# [Linux/Unix Config & Profile]
+*.service text eol=lf
+*.unit text eol=lf
+*.conf text eol=lf
+*.env text eol=lf
+*.profile text eol=lf
+*.bashrc text eol=lf
+*.zshrc text eol=lf
+*.cshrc text eol=lf
+*.tmux.conf text eol=lf
+*.vimrc text eol=lf
+*.gitignore text eol=lf
+*.dockerignore text eol=lf
+*.editorconfig text eol=lf
+*.j2 text eol=lf
+
+# [Git LFS] - 확장자 기반 (소스코드 오분류 방지)
+*.jar filter=lfs diff=lfs merge=lfs -text
+*.dll filter=lfs diff=lfs merge=lfs -text
+*.epd filter=lfs diff=lfs merge=lfs -text
+*.elf filter=lfs diff=lfs merge=lfs -text
+*.xdm filter=lfs diff=lfs merge=lfs -text
+*.zip filter=lfs diff=lfs merge=lfs -text
+*.exe filter=lfs diff=lfs merge=lfs -text
+*.lib filter=lfs diff=lfs merge=lfs -text
+*.tdb filter=lfs diff=lfs merge=lfs -text
+*.pdf filter=lfs diff=lfs merge=lfs -text

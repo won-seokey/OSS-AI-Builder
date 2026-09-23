@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSS Automation Report</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f5f7;">
+
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f4f5f7;">
+        <tr>
+            <td align="center" style="padding: 30px 10px;">
+
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="640"
+                    style="background-color: #ffffff; border-radius: 8px; border: 1px solid #e0e0e0; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+
+                    <!-- ======================================================= -->
+                    <!-- 헤더 : REPORT_SUBTITLE 로 CD/CT 구분                      -->
+                    <!-- ======================================================= -->
+                    <tr>
+                        <td align="left" style="background-color: #FF8300; padding: 25px 30px;">
+                            <h1 style="margin: 0; color: #ffffff; font-family: 'Arial Black', Arial, sans-serif; font-size: 28px; letter-spacing: 1px;">OSS Automation</h1>
+                            <p style="margin: 5px 0 0; color: #ffffff; font-size: 13px; opacity: 0.9;">Automated Continuous Testing Report</p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 30px; background-color: #ffffff;">
+
+                            <p style="margin: 0 0 20px 0; color: #333333; font-size: 15px; line-height: 1.6;">
+                                <strong>Open Source Compliance Pipeline</strong>
+                            </p>
+
+                            <!-- ======================================================= -->
+                            <!-- 정보 테이블                                              -->
+                            <!-- ======================================================= -->
+                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+                                style="border-top: 2px solid #FF8300; border-bottom: 1px solid #e0e0e0;">
+                                <tbody>
+                                    <tr>
+                                        <td style="padding: 14px 12px; color: #333333; font-size: 14px; border-bottom: 1px solid #e0e0e0; width: 40%;">Status</td>
+                                        <td style="padding: 14px 12px; color: #333333; font-size: 14px; border-bottom: 1px solid #e0e0e0; width: 60%;">{{PIPELINE_STATUS}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 14px 12px; color: #333333; font-size: 14px; border-bottom: 1px solid #e0e0e0; width: 40%;">Project</td>
+                                        <td style="padding: 14px 12px; color: #333333; font-size: 14px; border-bottom: 1px solid #e0e0e0; width: 60%;">{{PROJECT_NAME}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 14px 12px; color: #333333; font-size: 14px; border-bottom: 1px solid #e0e0e0; width: 40%;">Jira Ticket</td>
+                                        <td style="padding: 14px 12px; color: #333333; font-size: 14px; border-bottom: 1px solid #e0e0e0; width: 60%;">{{JIRA_TICKET}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 14px 12px; color: #333333; font-size: 14px; border-bottom: 1px solid #e0e0e0; width: 40%;">Test Type</td>
+                                        <td style="padding: 14px 12px; color: #333333; font-size: 14px; border-bottom: 1px solid #e0e0e0; width: 60%;">Open Source Compliance</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <!-- 간격 spacer -->
+                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td height="30" style="height: 30px; font-size: 1px; line-height: 30px;">&nbsp;</td>
+                                </tr>
+                            </table>
+
+                            <!-- 버튼 -->
+                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="center">
+                                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
+                                            <tr>
+                                                <td align="center" style="padding: 0 10px;">
+                                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="220" style="table-layout: fixed; width: 220px;">
+                                                        <tr>
+                                                            <td align="center" bgcolor="#1868db" style="border-radius: 4px; padding: 12px 10px;">
+                                                                <a href="{{JIRA_ISSUE_URL}}" target="_blank"
+                                                                    style="font-family: Arial, sans-serif; font-size: 14px; color: #ffffff; text-decoration: none; display: block; width: 100%; border-radius: 4px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                                    Jira Issue
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+
+                                                {{BLACKDUCK_BUTTONS}}
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f8f9fa; padding: 20px 30px; border-top: 1px solid #e0e0e0;">
+                            <p style="text-align: center; color: #878787; font-size: 12px; margin-top: 15px;">
+                                © 2026 Example Organization
+                                This email and any attachments are confidential and may contain legally protected information intended solely for the designated recipient.<br>
+                                Unauthorized review, use, disclosure, copying, or distribution is prohibited by applicable laws.<br>
+                                If you have received this email in error, please notify the sender immediately and delete this email and any attachments.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>

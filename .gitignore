@@ -1,0 +1,107 @@
+# ==============================
+# [1] Binary & Executables
+# ==============================
+*.elf
+*.axf
+*.srec
+*.out
+*.rar
+
+**/Backups/
+**/Log/
+**/log/
+**/err/
+**/lst*/
+**/obj*/
+**/SWC_Template/
+**/ContractPhase/
+
+# ==============================
+# [2] Build Artifacts
+# ==============================
+*.err
+*.log
+*.lst
+*.o
+*.obj
+*.d
+*.crf
+*.dep
+*.bak
+*.dcusr
+
+build/
+**/build/
+x64/
+**/x64/
+x86/
+**/x86/
+
+# ==============================
+# [3] OS Specific
+# ==============================
+.DS_Store
+Thumbs.db
+.directory
+.Trash-*
+Desktop.ini
+
+# ==============================
+# [4] IDE Specific
+# ==============================
+# VS Code
+.vscode/
+**/.vscode/
+
+# Visual Studio (Standard)
+.vs/
+**/.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Eclipse / STM32CubeIDE / Keil / IAR
+.metadata/
+**/.metadata/
+*.tmp
+*.swp
+*.~lock
+*.stackdump
+*.IAB
+*.IAD
+*.IMB
+*.IMD
+*.PFI
+*.PO
+*.PR
+*.PRI
+*.PS
+*.WK3
+*.SearchResults
+.recommenders/
+**/.recommenders/
+*.uvoptx
+*.uvguix.*
+*.ewt
+*.ewd
+.idea/
+**/.idea/
+
+# ==============================
+# [5] Custom Ignore Rules
+# ==============================
+commit_message.txt
+pr_body_temp.md
+platform/appl/chr/wpcLib/src
+company-ignore/
+tools/.env
+
+# Jenkins runtime and local credentials
+.env
+.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+jenkins_runtime/
+workspace_runs/
